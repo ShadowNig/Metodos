@@ -57,10 +57,6 @@ colnames(tabela2) <- c('Pouca','Media','Alta')
 
 ## Tabela com as proporcoes 
 
-## funcao para calcular as proporcoes de uma linha ou coluna
-
-prop <- function(x){return(x/sum(x))}
-
 (tabela.prop <- apply(tabela2, 1, prop))
 
 barplot(tabela.prop, col = c(2,7,4))
@@ -242,7 +238,7 @@ ggplot(base3, aes(sample = RAVLT)) + stat_qq() + stat_qq_line() + facet_wrap(~Gr
 ggplot(base3, aes(sample = WCST)) + stat_qq() + stat_qq_line() + facet_wrap(~Grupo)
 ggplot(base3, aes(sample = Stroop)) + stat_qq() + stat_qq_line() + facet_wrap(~Grupo)
 ggplot(base3, aes(sample = Digitos)) + stat_qq() + stat_qq_line() + facet_wrap(~Grupo)
-ggplot(base3, aes(sample = `Reproduçao Visual`)) + stat_qq() + stat_qq_line() + facet_wrap(~Grupo)
+ggplot(base3, aes(sample = `ReproduÃ§ao Visual`)) + stat_qq() + stat_qq_line() + facet_wrap(~Grupo)
 
 ## RAVLT , WCST e reproducao visual parecem estar proximos de uma normal, Stroop e digitos
 ## nem tanto, mas vamos fazer teste de normalidade para verificar mais precisamente
@@ -292,11 +288,11 @@ base3$Digitos[base3$Grupo=="TEPT"] %>%
 # consideraremos normalidade para os dados de Digitos para cada grupo
 
 ## Para Reproducao visual
-base3$`Reproduçao Visual`[base3$Grupo=="controle"] %>%
+base3$`ReproduÃ§ao Visual`[base3$Grupo=="controle"] %>%
   ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
-base3$`Reproduçao Visual`[base3$Grupo=="Trauma"] %>%
+base3$`ReproduÃ§ao Visual`[base3$Grupo=="Trauma"] %>%
   ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
-base3$`Reproduçao Visual`[base3$Grupo=="TEPT"] %>%
+base3$`ReproduÃ§ao Visual`[base3$Grupo=="TEPT"] %>%
   ks.test(.,"pnorm",mean(.,na.rm=T),sd(.,na.rm=T),alternative = "two.sided")
 
 # Adotando nivel de significancia de 3%, nao rejeitamos H0 em nenhum dos tres casos, assim
@@ -308,7 +304,7 @@ base3$`Reproduçao Visual`[base3$Grupo=="TEPT"] %>%
 LeveneTest(base3$RAVLT, base3$Grupo, center = "mean")
 LeveneTest(base3$Stroop, base3$Grupo, center = "mean")
 LeveneTest(base3$Digitos, base3$Grupo, center = "mean")
-LeveneTest(base3$`Reproduçao Visual`, base3$Grupo, center = "mean")
+LeveneTest(base3$`ReproduÃ§ao Visual`, base3$Grupo, center = "mean")
 
 # Adotando nivel de significancia igual a 3%, rejeitamos H0 para Stroop e Digitos, ou seja
 # ha evidencias de que as variancias dessas variaveis nao sao iguais quando divididas em
@@ -319,7 +315,7 @@ LeveneTest(base3$`Reproduçao Visual`, base3$Grupo, center = "mean")
 ## ANOVA
 
 teste3e <- aov(RAVLT~Grupo, data = base3)
-teste3e2 <- aov(`Reproduçao Visual`~Grupo, data = base3)
+teste3e2 <- aov(`ReproduÃ§ao Visual`~Grupo, data = base3)
 summary(teste3e)
 summary(teste3e2)
 
