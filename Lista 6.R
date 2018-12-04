@@ -167,6 +167,16 @@ chisq.test(tabela, correct = F)
 
 ## (c)
 
+## Analise Descritiva
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(Anos_escolaridade, na.rm = T),
+            sd = sd(Anos_escolaridade, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = Anos_escolaridade), fill = c(3,4,5))
+
+# As medias estao proximas, pode ser um indicio de que elas sao iguais
+
 ## Precisamos fazer ANOVA 
 
 # Verificando normalidade
@@ -186,6 +196,16 @@ base3$Anos_escolaridade[base3$Grupo=="TEPT"] %>%
 # portanto nao podemos realizar ANOVA.
 
 ## (d)
+
+## Analise Descritiva
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(QI, na.rm = T), sd = sd(QI, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = QI), fill = c(3,4,5))
+
+# as medias estao proximas mesmo com uma varibilidade razoavelmente alta, pode ser um in
+# dicio de que as medias sao iguais
 
 ## Precisamos fazer ANOVA 
 
@@ -227,6 +247,56 @@ PostHocTest(teste3d, method = "bonferroni")
 # sao iguais
 
 ## (e)
+
+## Analise Descritiva
+
+# Para RAVLT
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(RAVLT, na.rm = T), sd = sd(RAVLT, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = RAVLT), fill = c(3,4,5))
+
+# Uma das medias (controle) esta um pouco distante das demais, porem temos uma variabili
+# consideravel, nao podemos afirmar nada ainda
+
+# Para WCST
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(WCST, na.rm = T), sd = sd(WCST, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = WCST), fill = c(3,4,5))
+
+# Temos medias proximas mesmo com variancia razoavelmente alta, temos indicios de que as
+# medias podem ser iguais
+
+# Para Stroop
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(Stroop, na.rm = T), sd = sd(Stroop, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = Stroop), fill = c(3,4,5))
+
+# As medias nao estao muito proximas, mas temos uma certa variabilidade
+
+# Para Digitos
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(Digitos, na.rm = T), sd = sd(Digitos, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = Digitos), fill = c(3,4,5))
+
+# As medias estao proximas, indicio de que elas podem ser iguais
+
+# Para Reproducao visual
+
+base3 %>% group_by(Grupo) %>% 
+  summarise(media = mean(`Reproduçao Visual`, na.rm = T),
+            sd = sd(`Reproduçao Visual`, na.rm = T))
+
+ggplot(base3, aes(x = Grupo)) + geom_boxplot(aes(y = `Reproduçao Visual`), fill = c(3,4,5))
+
+# As medias nao estao muito proximas, mas temos uma certa variabilidade
 
 ## Precisamos fazer ANOVA para as 5 variaveis
 
