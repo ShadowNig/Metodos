@@ -406,3 +406,60 @@ PostHocTest(teste3e2, method = "bonferroni")
 # as medias sao iguais, entrando em cotradicao com o teste ANOVA
 
 ### 4
+
+
+
+### 5
+
+base5 <- read_excel("EMBRAPA.xls")
+base5$Tratamento <- ordered(base5$Tratamento, labels = c("1","2","3","4"))
+
+## (a)
+
+# Vamos fazer ANOVA para comparar a media dos pesos em cada tratamento
+
+## Analise Descritiva
+
+base5 %>% group_by(Tratamento) %>% 
+  summarise(media = mean(Peso26, na.rm = T), sd = sd(Peso26, na.rm = T))
+
+ggplot(base5, aes(x = Tratamento)) + geom_boxplot(aes(y = Peso26), fill = c(3,4,5,6))
+
+# Podemos observar que as medias nao estao muito proximas, porem ha uma certa variabilida
+# como podemos observar pelo desvios padroes
+
+## Vamos supor independencia
+
+## Verificando normalidade
+
+ggplot(base5, aes(sample = Peso26)) + stat_qq() + stat_qq_line() + facet_wrap(~Tratamento)
+
+## Os pontos nos graficos nao estao muito distantes da reta, vamos fazer o teste de norma
+## lidade para tomarmos uma decisao
+
+base5$Peso26[base5$Tratamento == 1] %>%
+  ks.test(., "pnorm", mean(., na.rm = T) ,sd(., na.rm = T), alternative = "two.sided")
+base5$Peso26[base5$Tratamento == 2] %>%
+  ks.test(., "pnorm", mean(., na.rm = T), sd(., na.rm = T), alternative = "two.sided")
+base5$Peso26[base5$Tratamento == 3] %>%
+  ks.test(., "pnorm", mean(., na.rm = T), sd(., na.rm = T), alternative = "two.sided")
+base5$Peso26[base5$Tratamento == 4] %>%
+  ks.test(., "pnorm", mean(., na.rm = T), sd(., na.rm = T), alternative = "two.sided")
+
+# Com base num nivel de significancia de 5%, nao rejeitamos H0 em nenhum dos testes, 
+# portanto e razoavel supor que os dados sao provenientes de uma normal
+
+## verificando homocedasticidade
+
+LeveneTest(base5$Peso26, base5$Tratamento, center = "mean")
+
+# Com base num nivel de significancia de 5%, nao rejeitamos H0, consideraremos, portanto,
+# variancias iguais
+
+# ANOVA
+
+teste5a <- aov(Peso26~Tratamento, data = base5)
+summary(teste5a)
+
+# Com base num nivel de significancia de 5%, nao rejeitamos H0, ou seja, o teste indica
+# que as medias do peso dos bezerros apos 26 semanas sao iguais.
