@@ -463,3 +463,49 @@ summary(teste5a)
 
 # Com base num nivel de significancia de 5%, nao rejeitamos H0, ou seja, o teste indica
 # que as medias do peso dos bezerros apos 26 semanas sao iguais.
+
+## (b)
+
+# Precisamos realizar um teste de diferenca de medias para populacoes normais dependentes,
+# uma vez que a amostra e pareada.
+
+# Hipoteses  H0: mu26 - mu0 = 88 VS H1: mu26 - mu0 > 88 
+
+# retirando segunda linha que possui NA, pois com ela nao conseguiremos comparar as medias
+
+base5.new <- na.omit(base5)
+
+## Analise descritiva
+
+mean(base5.new$Peso26 - base5.new$Peso0) ; sd(base5.new$Peso26 - base5.new$Peso0)
+
+ggplot(base5.new, aes(x = "diferença de pesos")) +
+  geom_boxplot(aes(y = Peso26 - Peso0))
+
+## Pelo que podemos observar pela media amostral e pelo boxplot, a diferenca das medias
+## parece ser superior a 88, que e o que vamos testar
+
+## verificando normalidade
+
+ggplot(base5, aes(sample = Peso0)) + stat_qq() + stat_qq_line()
+ggplot(base5, aes(sample = Peso26)) + stat_qq() + stat_qq_line()
+
+# Os pontos estao proximos da reta, indicando que as amostras podem vir de uma distribui-
+# cao normal
+
+ks.test(base5$Peso0, "pnorm", mean(base5$Peso0, na.rm = T), sd(base5$Peso0, na.rm = T),
+        alternative = "two.sided")
+ks.test(base5$Peso26, "pnorm", mean(base5$Peso26, na.rm = T), sd(base5$Peso26, na.rm = T),
+        alternative = "two.sided")
+
+# Adotando um nivel de significancia de 4%, nao rejeitamos H0 em ambos os testes, ou seja,
+# e razoavel supor normalidade para as variaveis de peso do bezerro inicialmente e apos
+# 26 semanas
+
+## Teste
+
+t.test(x = base5.new$Peso26, y = base5.new$Peso0, mu = 88, alternative = "greater",
+       paired = T, correct = F)
+
+# Com base num nivel de significancia de 4%, rejeitamos H0, ou seja, o teste indica que
+# a diferenca das medias do peso dos bezerros cresceu mais de 88 kg apos 26 semanas
