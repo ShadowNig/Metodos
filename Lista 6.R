@@ -125,10 +125,22 @@ summary(teste3a)
 ## Adotando um nivel de significancia de 3%, rejeitamos H0, ou seja, ha
 ## evidencias de que pelo menos uma das medias sao diferentes
 
+## Analise de Acompanhamento
+
 PostHocTest(teste3a, method = "bonferroni")
+
+## No teste de Bonferroni temos que dividir o nivel de significancia pelo numero 
+## de comparacoes que vamos fazer. Tomamos entao um nivel de significancia de 1%.
 
 ## Entramos em contradicao, pois concluimos que as medias comparadas 2 a 2 sao
 ## todas iguais
+
+## Vamos testar pelo metodo de Duncan
+
+PostHocTest(teste3a, method = "duncan")
+
+## Concluimos entao, com nivel de significancia de 1%, que a idade media dos 
+## pacientes controle se difere da idade media dos pacientes com trauma.
 
 ## (b)
 
@@ -407,6 +419,57 @@ PostHocTest(teste3e2, method = "bonferroni")
 
 ### 4
 
+# criando a base4 que agrupa os pacientes com trauma e tept numa categoria só
+
+base4 = base3
+base4$Grupo = factor(base4$Grupo, levels = c("TEPT", "Trauma", "controle"), 
+                     labels = c("novo grupo", "novo grupo", "controle"))
+
+## (a)
+
+# Vamos realizar um teste de hipotese para diferenca de duas medias 
+
+## Analise descritiva
+
+base4 %>% group_by(Grupo) %>% 
+  summarise(media = mean(Idade, na.rm = T), sd = sd(Idade, na.rm = T))
+
+ggplot(base4, aes(x = Grupo)) + geom_boxplot(aes(y = Idade), fill = c(3,4))
+
+## Pelo que podemos observar na tabela e no boxplot, as medias parecem nao tao 
+## proximas
+
+## Vamos supor independencia
+## Vamos verificar normalidade
+
+ggplot(base4, aes(sample = Idade)) + stat_qq() + stat_qq_line() + facet_wrap(
+  ~Grupo)
+
+# Parece ser razoavel supor normalidade para os dois grupos
+
+aux1 = base4$Idade[base4$Grupo=="controle"]
+ks.test(aux1, "pnorm", mean(aux1, na.rm=T), sd(aux1, na.rm=T))
+aux2 = base4$Idade[base4$Grupo=="novo grupo"]
+ks.test(aux2, "pnorm", mean(aux2, na.rm=T), sd(aux2, na.rm=T))
+
+## Adotando um nivel de significancia de 3%, nao rejeitamos nenhuma das hipoteses
+## nulas, portanto, e razoavel supor normalidade para idade de cada grupo
+
+## Testando variancias iguais
+
+VarTest(aux1, aux2, alternative = "two.sided")
+
+## Adotando um nivel de significancia de 3%, nao rejeitamos H0, entao considerare-
+## mos as variancias iguais.
+
+## Teste de diferenca de medias 
+
+t.test(aux1, aux2, alternative = "two.sided", mu = 0, var.equal = TRUE)
+
+## Adotando um nivel de significancia de 3%, rejeitamos H0, ou seja, ha
+## evidencias de que as medias sao diferentes.
+
+## (b)
 
 
 ### 5
