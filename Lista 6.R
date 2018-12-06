@@ -1,6 +1,7 @@
 library(tidyverse)
 library(readxl)
 library(DescTools)
+library(gridExtra)
 
 ## funcao para calcular as proporcoes de uma linha ou coluna
 
@@ -419,11 +420,13 @@ PostHocTest(teste3e2, method = "bonferroni")
 
 ### 4
 
-# criando a base4 que agrupa os pacientes com trauma e tept numa categoria só
+# criando a base4 que agrupa os pacientes com trauma e tept numa categoria so
 
-base4 = base3
-base4$Grupo = factor(base4$Grupo, levels = c("TEPT", "Trauma", "controle"), 
-                     labels = c("novo grupo", "novo grupo", "controle"))
+base4 <- read_excel("Banco Escalas Psicologia.xls", na = "999")
+base4 <- base4[-(215:219),] # retirando as ultimas linhas
+base4$Grupo <- cut(base4$Grupo, breaks = c(-Inf,0,Inf), 
+                                labels = c("controle","novo grupo"))
+base4$Sexo <- factor(base4$Sexo, labels = c("M","F"))
 
 ## (a)
 
@@ -442,13 +445,13 @@ ggplot(base4, aes(x = Grupo)) + geom_boxplot(aes(y = Idade), fill = c(3,4))
 ## Vamos supor independencia
 ## Vamos verificar normalidade
 
-ggplot(base4, aes(sample = Idade)) + stat_qq() + stat_qq_line() + facet_wrap(
-  ~Grupo)
+ggplot(base4, aes(sample = Idade)) + stat_qq() + stat_qq_line() + 
+       facet_wrap(~Grupo)
 
 # Parece ser razoavel supor normalidade para os dois grupos
-
+View(base4)
 aux1 = base4$Idade[base4$Grupo=="controle"]
-ks.test(aux1, "pnorm", mean(aux1, na.rm=T), sd(aux1, na.rm=T))
+ks.test(aux1, "pnorm", mean(aux1, na.rm=T), sd(aux1, na.rm=T), alternative = "two.sided")
 aux2 = base4$Idade[base4$Grupo=="novo grupo"]
 ks.test(aux2, "pnorm", mean(aux2, na.rm=T), sd(aux2, na.rm=T))
 
@@ -471,6 +474,219 @@ t.test(aux1, aux2, alternative = "two.sided", mu = 0, var.equal = TRUE)
 
 ## (b)
 
+## Pela forma de coleta, vamos fazer um teste de independencia
+
+# H0: genero e transtorno sao independentes  vs 
+# H1: genero e transtorno nao sao independentes
+
+## Analise descritiva
+
+## tabela com as frequencias
+
+base4 %>% group_by(Sexo, Grupo) %>% summarise(freq = n())
+(tabela <- matrix(c(21, 49, 37, 107), nrow = 2, ncol = 2, byrow = T))
+
+## tabela com as proporcoes observadas e proporcoes esperadas, sob H0 verdadeiro
+
+tabela4 = base4 %>% group_by(Sexo, Grupo) %>% summarise(prop = n()/sum(tabela))
+tabela4$prop.esp= c(prop2(tabela,1,1),prop2(tabela,2,1),prop2(tabela,1,2),
+                    prop2(tabela, 2,2))
+tabela4
+
+## Comparando as proporcoes esperadas e observadas, parece bastante razoavel supor que 
+## elas sao independentes
+
+## teste chi-quadrado (Independencia)
+
+chisq.test(tabela, correct = F)
+
+## Adotando um nivel de significancia de 5%, nao rejeitamos H0, entao considerare
+## que as variaveis genero e transtorno sao independentes
+
+## (c)
+
+# Queremos saber se pra cada grupo temos a mesma proporcao de escolaridade
+
+base4$Escolaridade = cut(base4$Anos_escolaridade, breaks = c(0,9,12,20), 
+                         labels = c("fundamental", "medio", "superior"))
+
+# Analise descritiva
+
+## tabela com as frequencias
+
+base4 %>% group_by(Grupo, Escolaridade) %>% summarise(freq = n())
+tab = table(base4$Grupo, base4$Escolaridade)
+
+
+## tabela com as proporcoes observadas e proporcoes esperadas, sob H0 verdadeiro
+
+tabela4 = base4 %>% group_by(Escolaridade, Grupo) %>% 
+  summarise(prop = n()/sum(tabela))
+tabela4$prop.esp= c(prop2(tab,1,1),prop2(tab,1,2),prop2(tab,1,3),
+                    prop2(tab,2,1),prop2(tab,2,2),prop2(tab,2,3), 0)
+tabela4
+
+## Fazendo o teste de Homogeneidade
+
+# H0: proporcao de Escolaridade e a mesma em cada grupo
+
+chisq.test(tab, correct = F)
+
+## Adotando um nivel de significancia de 5%, rejeitamos H0, entao consideramos 
+## que as proporcoes de escolaridade para cada grupo e diferente
+
+## (d)
+
+# Vamos realizar um teste de hipotese para diferenca de duas medias 
+
+## Analise Descritiva
+
+base4 %>% group_by(Grupo) %>% 
+  summarise(media = mean(QI, na.rm = T), sd = sd(QI, na.rm = T))
+
+ggplot(base4, aes(x = Grupo)) + geom_boxplot(aes(y = QI), fill = c(3,4))
+
+# as medias estao proximas mesmo com uma varibilidade razoavelmente alta, pode 
+# ser um indicio de que as medias sao iguais
+
+## Vamos supor independencia
+
+## Vamos verificar normalidade
+
+ggplot(base4, aes(sample = QI)) + stat_qq() + stat_qq_line() + facet_wrap(
+  ~Grupo)
+
+# Parece ser razoavel supor normalidade para os dois grupos
+
+aux1 = base4$QI[base4$Grupo=="controle"]
+ks.test(aux1, "pnorm", mean(aux1, na.rm=T), sd(aux1, na.rm=T))
+aux2 = base4$QI[base4$Grupo=="novo grupo"]
+ks.test(aux2, "pnorm", mean(aux2, na.rm=T), sd(aux2, na.rm=T))
+
+## Adotando um nivel de significancia de 3%, nao rejeitamos nenhuma das hipoteses
+## nulas, portanto, e razoavel supor normalidade para idade de cada grupo
+
+## Testando variancias iguais
+
+VarTest(aux1, aux2, alternative = "two.sided")
+
+## Adotando um nivel de significancia de 3%, nao rejeitamos H0, entao considerare-
+## mos as variancias iguais.
+
+## Teste de diferenca de medias 
+
+t.test(aux1, aux2, alternative = "two.sided", mu = 0, var.equal = TRUE)
+
+## Adotando um nivel de significancia de 3%, rejeitamos H0, ou seja, ha
+## evidencias de que as medias sao diferentes
+
+## (e)
+
+# Vamos analisar se ha evidencias de que as pontuacoes medias dos testes sao 
+# iguais pra cada grupo
+
+## Analise descritiva
+
+medias = base4 %>% group_by(Grupo) %>% summarise(ravlt = mean(RAVLT, na.rm=T),
+    wcst = mean(WCST, na.rm=T), stroop = mean(Stroop, na.rm=T),
+    digitos = mean(Digitos, na.rm=T), repr.vis = mean(`Reproduçao Visual`, na.rm=T))
+medias
+
+g1 = ggplot(base4, aes(x = Grupo)) + 
+     geom_boxplot(aes(y = RAVLT), fill = "aquamarine3") 
+g2 = ggplot(base4, aes(x = Grupo)) + 
+     geom_boxplot(aes(y = WCST), fill = "deeppink") 
+g3 = ggplot(base4, aes(x = Grupo)) + 
+     geom_boxplot(aes(y = Stroop),fill = "chocolate")  
+g4 = ggplot(base4, aes(x = Grupo)) + 
+     geom_boxplot(aes(y = Digitos),fill = "coral2") 
+g5 = ggplot(base4, aes(x = Grupo)) + 
+     geom_boxplot(aes(y = `Reproduçao Visual`), fill = "darkseagreen")
+grid.arrange(g1, g2, g3, g4, g5)
+
+## As medias parecem razoavelmente proximas, exceto talvez o teste RAVLT e Reprod. vis.
+## Vamos analisar melhor
+
+## Precisamos fazer ANOVA para as 5 variaveis
+
+## Vamos supor independencia de todas elas
+
+## Verificando normalidade de cada variavel
+
+g1 = ggplot(base4, aes(sample = RAVLT)) + stat_qq() + stat_qq_line() + 
+     facet_wrap(~Grupo)
+g2 = ggplot(base4, aes(sample = WCST)) + stat_qq() + stat_qq_line() + 
+     facet_wrap(~Grupo)
+g3 = ggplot(base4, aes(sample = Stroop)) + stat_qq() + stat_qq_line() + 
+     facet_wrap(~Grupo)
+g4 = ggplot(base4, aes(sample = Digitos)) + stat_qq() + stat_qq_line() + 
+     facet_wrap(~Grupo)
+g5 = ggplot(base4, aes(sample = `Reproduçao Visual`)) + stat_qq() + stat_qq_line() +
+     facet_wrap(~Grupo)
+grid.arrange(g1, g2, g3, g4, g5)
+
+## Para RAVLT
+base4$RAVLT[base4$Grupo=="controle"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+base4$RAVLT[base4$Grupo=="novo grupo"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+
+# Adotando nivel de significancia de 3%, nao rejeitamos H0 em nenhum dos dois casos,
+# assim consideraremos normalidade para os dados de RAVLT para cada grupo
+
+## Para WCST
+base4$WCST[base4$Grupo=="controle"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+base4$WCST[base4$Grupo=="novo grupo"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+
+# Adotando nivel de significancia de 3%, rejeitamos H0 para o grupo controle, 
+# assim nao podemos realizar ANOVA para essa variavel, mesmo a outra sendo normal
+
+## Para Stroop
+base4$Stroop[base4$Grupo=="controle"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+base4$Stroop[base4$Grupo=="novo grupo"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+
+# Adotando nivel de significancia de 3%, rejeitamos H0 para o novo grupo, 
+# assim nao podemos realizar ANOVA para essa variavel, mesmo a outra sendo normal
+
+## Para Digitos
+base4$Digitos[base4$Grupo=="controle"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+base4$Digitos[base4$Grupo=="novo grupo"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+
+# Adotando nivel de significancia de 3%, rejeitamos H0 para o novo grupo, 
+# assim nao podemos realizar ANOVA para essa variavel, mesmo a outra sendo normal
+
+## Para Reproducao visual
+base4$`Reproduçao Visual`[base4$Grupo=="controle"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+base4$`Reproduçao Visual`[base4$Grupo=="novo grupo"] %>%
+  ks.test(.,"pnorm",mean(.,na.rm=T) ,sd(.,na.rm=T),alternative = "two.sided")
+
+# Adotando nivel de significancia de 3%, rejeitamos H0 para o novo grupo, 
+# assim nao podemos realizar ANOVA para essa variavel, mesmo a outra sendo normal
+
+# Agora, vamos testar se as variancias sao iguais para RAVLT
+
+VarTest(base4$RAVLT[base4$Grupo=="controle"], 
+        base4$RAVLT[base4$Grupo=="novo grupo"], 
+        alternative = "two.sided")
+
+# Adotando nivel de significancia igual a 3%, nao rejeitamos H0 para RAVLT  
+# assim, consideraremos que suas variancias sao iguais
+
+## Teste de diferenca de medias 
+
+t.test(base4$RAVLT[base4$Grupo=="controle"], 
+       base4$RAVLT[base4$Grupo=="novo grupo"], 
+       alternative = "two.sided", mu = 0, var.equal = TRUE)
+
+## Adotando um nivel de significancia de 3%, rejeitamos H0, ou seja, ha
+## evidencias de que as medias sao diferentes.
 
 ### 5
 
