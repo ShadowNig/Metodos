@@ -509,3 +509,92 @@ t.test(x = base5.new$Peso26, y = base5.new$Peso0, mu = 88, alternative = "greate
 
 # Com base num nivel de significancia de 4%, rejeitamos H0, ou seja, o teste indica que
 # a diferenca das medias do peso dos bezerros cresceu mais de 88 kg apos 26 semanas
+
+### 6
+
+base6 <- read_csv2("Basevulnerabilidade.csv")
+base6$situacao <- factor(base6$situacao, labels = c("alugado", "proprio"))
+base6$escmae <- ordered(base6$escmae, labels = c("baixa", "media", "alta"))
+
+## (a)
+
+## Teste de independencia
+
+# Para situacao de moradia e vulnerabilidade
+
+# H0: situacao de moradia e vulnerabilidade sao independentes
+# H1: situacao de moradia e vulnerabilidade nao sao independentes
+
+## Analise descritiva
+
+# Vamos comparar as proporcoes totais observadas com as proporcoes esperadas,
+# supondo H0 verdadeiro
+
+(aux <- table(base6$vulnerabilidade, base6$situacao))
+
+tabela6 <- base6 %>% group_by(vulnerabilidade, situacao) %>%
+  summarise(freq.obs <- n()/nrow(base6))
+
+tabela6$prop.esp <- c(prop2(aux,1,1), prop2(aux,1,2), prop2(aux,2,1),prop2(aux,2,2))
+tabela6
+
+# Pelo que observamos na tabela, as proporcoes nao estao mt proximas, o que me leva
+# a pensar que elas nao serao independentes, ou seja, que elas terao alguma relacao
+
+# Teste
+
+chisq.test(aux, correct = F)
+
+# Adotando nivel de significancia de 5%, rejeitamos H0, ou seja, o teste indica 
+# que as variaveis vulnerabilidade e situacao de moradia possuem relacao
+
+# Para situacao de moradia e vulnerabilidade
+
+# H0: escolaridade da mae e vulnerabilidade sao independentes
+# H1: escolaridade da mae e vulnerabilidade nao sao independentes
+
+## Analise descritiva
+
+# Vamos comparar as proporcoes totais observadas com as proporcoes esperadas,
+# supondo H0 verdadeiro
+
+(aux <- table(base6$escmae, base6$vulnerabilidade))
+
+(tabela6 <- base6 %>% group_by(vulnerabilidade, escmae) %>%
+  summarise(freq.obs = n()))
+
+tabela6$freq.esp <- c(prop2(aux, 1, 1), prop2(aux, 2, 1), prop2(aux, 3, 1),
+                      prop2(aux, 1, 2), prop2(aux, 2, 2), prop2(aux, 3, 2))*40
+
+tabela6
+
+# Pelo que observamos na tabela, as proporcoes estaoproximas, o que me leva a 
+# pensar que elas serao independentes, ou seja, que elas terao alguma relacao
+
+# porem dessa forma, temos frequencias esperadas menores que 5, assim nao consegui
+# remos ter uma boa aproximacao da distribuicao para realizar o teste de hipotese
+# Para resolver isso, vamos juntar o grupo de escolaridade da mae media e alta
+
+base6.new <- read_csv2("Basevulnerabilidade.csv")
+base6.new$escmae <- cut(base6.new$escmae, breaks = c(-Inf, 1, Inf),
+                  labels = c("baixa", "media/alta"))
+
+(aux <- table(base6.new$escmae, base6.new$vulnerabilidade))
+
+(tabela6 <- base6.new %>% group_by(vulnerabilidade, escmae) %>%
+    summarise(freq.obs = n()))
+
+tabela6$freq.esp <- c(prop2(aux, 1, 1), prop2(aux, 2, 1), prop2(aux, 1, 2),
+                      prop2(aux, 2, 2))*40
+
+tabela6
+
+## Agora sim !!
+
+# Teste
+
+chisq.test(aux, correct = F)
+
+# Adotando nivel de significancia de 5%, nao rejeitamos H0, ou seja, o teste 
+# indica  que as variaveis vulnerabilidade e situacao de moradia nao possuem
+# relacao
