@@ -160,7 +160,7 @@ base3 %>% group_by(Sexo, Grupo) %>% filter(Grupo != "controle") %>%
 
 ## tabela com as proporcoes observadas e proporcoes esperadas, sob H0 verdadeiro
 
-base3 %>% group_by(Sexo, Grupo) %>% filter(Grupo != "controle") %>%
+tabela3 = base3 %>% group_by(Sexo, Grupo) %>% filter(Grupo != "controle") %>%
   summarise(prop = n()/sum(tabela))
 tabela3$prop.esp= c(prop2(tabela,1,1),prop2(tabela,2,1),prop2(tabela,1,2),
                     prop2(tabela, 2,2))
@@ -877,3 +877,146 @@ chisq.test(aux, correct = F)
 # Adotando nivel de significancia de 5%, nao rejeitamos H0, ou seja, o teste 
 # indica  que as variaveis vulnerabilidade e situacao de moradia nao possuem
 # relacao
+
+## (b)
+# Vamos comparar as medias de anos de escolaridade entre pessoas com e sem 
+# vulnerabilidade social.
+
+# Analise descritiva
+
+(tabela = base6 %>% group_by(vulnerabilidade) %>% summarise(media = mean(escolaridade, na.rm=T), sd = sd(escolaridade, na.rm=T)))
+
+ggplot(base6, aes(x=vulnerabilidade, y=escolaridade)) + geom_boxplot()
+
+# Testando normalidade pra cada grupo
+
+base6$escolaridade[base6$vulnerabilidade == "Sim"] %>%
+  ks.test(., "pnorm", mean = mean(., na.rm = T), sd = sd(.,na.rm = T), alternative = "two.sided")
+
+base6$escolaridade[base6$vulnerabilidade == "Nao"] %>%
+  ks.test(., "pnorm", mean = mean(., na.rm = T), sd = sd(.,na.rm = T), alternative = "two.sided")
+
+# Conclusao: com base num ns de 5%, concluimos q os dois grupo seguem distribuicao normal
+
+# Verificando se variancias sao iguais
+
+VarTest(base6$escolaridade[base6$vulnerabilidade == "Sim"],
+        base6$escolaridade[base6$vulnerabilidade == "Nao"],
+        alternative = "two.sided", correct = F)
+var.test(base6$escolaridade[base6$vulnerabilidade == "Sim"],
+         base6$escolaridade[base6$vulnerabilidade == "Nao"],
+         alternative = "two.sided", correct = F)
+
+# Conclusao: com base num ns de 5% , temos que as variancias nao sao iguais.
+
+# Teste
+
+# Hipoteses: H0: mu1 = mu2
+
+t.test(base6$escolaridade[base6$vulnerabilidade == "Sim"],
+       base6$escolaridade[base6$vulnerabilidade == "Nao"],
+       var.equal=F, correct=F, alternative="two.sided")
+
+# Conclusao: com base num ns de 5%, concluimos que as medias nao sao iguais.
+
+## Estudo I
+library(readxl)
+pappagu = read_excel("Banco Cancer Mama.xls", na="NA")
+pappagu$cancer = factor(pappagu$cancer, labels = c("Nao", "Sim"))
+pappagu$menstruacao = factor(pappagu$menstruacao, labels = c("Nao", "Sim"))
+pappagu$grauparentesco = factor(pappagu$grauparentesco, labels = c("3o Grau", "2o Graus", "1o Grau"))
+
+## 7
+
+# Teste de homogeneidade
+
+# Analise descritiva
+
+(tab <- table(pappagu$cancer, pappagu$menstruacao))
+(tab.analise <- pappagu %>% group_by(cancer, menstruacao) %>%
+    summarise(freq.obs = n()))
+
+tab.analise$freq.esp = c(sum(tab[1,])*sum(tab[,1])/sum(tab),
+                         sum(tab[1,])*sum(tab[,2])/sum(tab),
+                         sum(tab[2,])*sum(tab[,1])/sum(tab),
+                         sum(tab[2,])*sum(tab[,2])/sum(tab))
+tab.analise
+
+# Teste chi - quadrado
+
+chisq.test(tab, correct = F)
+ 
+# Conclusao: com base num ns de 5%, temos que as proporcoes de pessoas que 
+# tiveram ou nao menstruacao antes dos 12 anos comparada com ter ou nao cancer 
+# nao sao homogeneas, ou seja, nao sao distribuidas de forma igual. 
+
+## (8)
+pappagu.can = pappagu %>% filter(cancer=="Sim")
+
+# Analise descritiva
+tabelas.p = tibble(nome = c("antes", "depois"),
+                   media = c(mean(pappagu.can$antes), mean(pappagu.can$depois)),
+                   sd = c(sd(pappagu.can$antes), sd(pappagu.can$depois)))
+tabelas.p
+
+pappagu.can$difer = pappagu.can$antes - pappagu.can$depois
+ggplot(pappagu.can, aes(x = "diferenca")) + geom_boxplot(aes(y = difer))
+
+# Testando normalidade
+ks.test(pappagu.can$depois, "pnorm", mean(pappagu.can$depois), 
+        sd(pappagu.can$depois), alternative = "two.sided")
+ks.test(pappagu.can$antes, "pnorm", mean(pappagu.can$antes), 
+        sd(pappagu.can$antes), alternative = "two.sided")
+# as duas amostras sao normais. 
+
+t.test(pappagu.can$antes, pappagu.can$depois, alternative = "greater", paired = T)
+ 
+# Concluimos entao que o tratamento nao foi eficiente.
+
+## 9
+# H0: mupcc = mupsc x H1: mupcc > mupsc
+# Analise descritiva
+pappagu %>% group_by(cancer) %>% summarise(media = mean(peso), sd = sd(peso))
+ggplot(pappagu, aes(x=cancer, y=peso)) + geom_boxplot()
+# Parece que as medias estao proximas uma da outra
+
+# normalidade
+pappagu$peso[pappagu$cancer=="Sim"] %>% 
+  ks.test(., "pnorm", mean(., na.rm=T), sd(., na.rm=T), alternative = "two.sided")
+pappagu$peso[pappagu$cancer=="Nao"] %>% 
+  ks.test(., "pnorm", mean(., na.rm=T), sd(., na.rm=T), alternative = "two.sided")
+# Parece que os dois grupos seguem distribuicao normal
+
+# homocedasticidade
+VarTest(pappagu$peso[pappagu$cancer=="Sim"], pappagu$peso[pappagu$cancer=="Nao"], 
+        alternative = "two.sided")
+# Os grupos possuem variancias iguais
+
+# Teste para diferenca de medias
+t.test(pappagu$peso[pappagu$cancer=="Sim"], pappagu$peso[pappagu$cancer=="Nao"],
+       alternative = "greater", var.equal = T)
+# com base num ns de 5%, concluimos que as medias dos dois grupos sao iguais
+
+## 10
+# Queremos comparar duas variaveis categoricas. Pelo jeito como foi coletado os dados, 
+# vamos fazer um teste de homogeneidade.
+
+# Analise Descritiva
+tabela = table(pappagu$cancer, pappagu$grauparentesco)
+tabela
+
+tab.prop = matrix(c(prop(tabela[1,]), prop(tabela[2,])), nrow = 2, byrow = T)
+rownames(tab.prop) = c("Nao", "Sim")
+colnames(tab.prop) = c("3o Grau", "2o Graus" , "1o Grau")
+tab.prop
+
+ggplot(pappagu, aes(x=cancer)) + geom_bar(aes(fill=grauparentesco), position = "fill")
+
+# H0: as proporcoes de pacientes com parentesco de 3o 2o e 1o grau se distribuem de 
+# maneira igual entre pacientes com cancer e sem.
+chisq.test(tabela, correct = F)
+# com base num ns de 5%, rejeitamos H0, ou seja, acreditamos que as proporcoes de 
+# pacientes com parentesco de 3o 2o e 1o grau nao se distribuem de maneira igual
+# entre pacientes com cancer e sem.
+
+
